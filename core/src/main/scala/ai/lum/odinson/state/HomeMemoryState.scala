@@ -4,7 +4,7 @@ import com.typesafe.config.Config
 
 import scala.collection.mutable
 
-class MemoryState extends State {
+class HomeMemoryState extends State {
 
   type TokenInterval = (Int, Int)
 
@@ -57,16 +57,16 @@ class MemoryState extends State {
   }
 }
 
-class MemoryStateFactory extends StateFactory {
+class HomeMemoryStateFactory extends StateFactory {
 
   override def usingState[T](function: State => T): T = {
-    function(new MemoryState())
+    function(new HomeMemoryState())
   }
 }
 
-object MemoryStateFactory {
+object HomeMemoryStateFactory {
 
-  def apply(config: Config): MemoryStateFactory = {
-    new MemoryStateFactory()
+  def apply(config: Config): HomeMemoryStateFactory = {
+    new HomeMemoryStateFactory()
   }
 }

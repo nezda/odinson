@@ -36,3 +36,6 @@ docs/.sass-cache/
 
 # scala formater
 .scalafmt.conf
+
+# plugins
+core/lib/*

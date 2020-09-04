@@ -110,7 +110,7 @@ object MatchSelector {
         case m: ConcatMatch     => m.subMatches.toList ::: tail
         case m: RepetitionMatch => m.subMatches.toList ::: tail
         case m: GraphTraversalMatch => m.srcMatch :: m.dstMatch :: tail
-        case m: StateMatch => ??? // TODO
+        case m: StateMatch => m.namedCaptures.map(nc => nc.capturedMatch).toList ++ tail // TODO
       }
     }
   }

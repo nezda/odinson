@@ -1,7 +1,9 @@
 package ai.lum.odinson
 
-import java.io.File
+import java.io.{File, PrintWriter}
+import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Collection
+
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
 import org.apache.lucene.util.BytesRef
@@ -21,12 +23,14 @@ import ai.lum.common.TryWithResources.using
 import ai.lum.odinson.lucene.analysis._
 import ai.lum.odinson.digraph.{DirectedGraph, Vocabulary}
 import ai.lum.odinson.serialization.UnsafeSerializer
+import org.apache.lucene.document.{StoredField, TextField}
 
 class OdinsonIndexWriter(
   val directory: Directory,
   val vocabulary: Vocabulary,
   val documentIdField: String,
   val sentenceIdField: String,
+  val uniqueDocSentIdField: String,
   val sentenceLengthField: String,
   val normalizedTokenField: String,
   val addToNormalizedField: Set[String],
@@ -43,6 +47,8 @@ class OdinsonIndexWriter(
   val writerConfig = new IndexWriterConfig(analyzer)
   writerConfig.setOpenMode(OpenMode.CREATE)
   val writer = new IndexWriter(directory, writerConfig)
+
+  val tempUniqueIDWriter = new PrintWriter("./uniqueDocSentIds.txt")
 
   def addDocuments(block: Seq[lucenedoc.Document]): Unit = {
     addDocuments(block.asJava)
@@ -87,6 +93,9 @@ class OdinsonIndexWriter(
       stream.writeString(BuildInfo.toJson)
     }
     writer.close()
+    // FIXME: remove
+    tempUniqueIDWriter.flush()
+    tempUniqueIDWriter.close()
   }
 
   /** generates a lucenedoc document per sentence */
@@ -119,6 +128,12 @@ class OdinsonIndexWriter(
     // add sentence metadata
     sent.add(new lucenedoc.StoredField(documentIdField, docId))
     sent.add(new lucenedoc.StoredField(sentenceIdField, sentId)) // FIXME should this be a number?
+
+    sent.add(new TextField(uniqueDocSentIdField, s"$docId--$sentId", Store.NO))
+    sent.add(new lucenedoc.SortedDocValuesField(uniqueDocSentIdField, new BytesRef(s"$docId--$sentId")))
+
+    // FIXME: remove!
+    tempUniqueIDWriter.println(s"$docId--$sentId")
     sent.add(new lucenedoc.NumericDocValuesField(sentenceLengthField, s.numTokens))
     // add fields
     for {
@@ -249,6 +264,7 @@ object OdinsonIndexWriter {
     val indexDir = config[String]("indexDir")
     val documentIdField = config[String]("index.documentIdField")
     val sentenceIdField = config[String]("index.sentenceIdField")
+    val uniqueDocSentIdField = config[String]("index.uniqueDocSentIdField")
     val sentenceLengthField  = config[String]("index.sentenceLengthField")
     val normalizedTokenField = config[String]("index.normalizedTokenField")
     val addToNormalizedField = config[List[String]]("index.addToNormalizedField")
@@ -272,6 +288,7 @@ object OdinsonIndexWriter {
       directory, vocabulary,
       documentIdField,
       sentenceIdField,
+      uniqueDocSentIdField,
       sentenceLengthField,
       normalizedTokenField,
       addToNormalizedField.toSet,

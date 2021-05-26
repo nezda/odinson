@@ -4,7 +4,7 @@ import com.typesafe.sbt.packager.docker.DockerChmodType
 
 organization in ThisBuild := "ai.lum"
 
-scalaVersion in ThisBuild := "2.12.10"
+scalaVersion in ThisBuild := "2.12.13"
 
 fork in ThisBuild := true
 
@@ -55,8 +55,8 @@ lazy val extra = project
 val gitDockerTag = settingKey[String]("Git commit-based tag for docker")
 ThisBuild / gitDockerTag := {
   val shortHash: String = git.gitHeadCommit.value.get.take(7)  
-  val uncommittedChanges: Boolean = (git.gitUncommittedChanges).value
-  s"""${shortHash}${if (uncommittedChanges) "-DIRTY" else ""}"""
+  val uncommittedChanges: Boolean = git.gitUncommittedChanges.value
+  s"$shortHash${if (uncommittedChanges) "-DIRTY" else ""}"
 }
 
 lazy val generalDockerSettings = {
